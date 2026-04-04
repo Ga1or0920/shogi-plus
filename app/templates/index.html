@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>将棋＋（プラス）</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=15">
+</head>
+<body>
+  <header class="hidden">
+    <h1>将棋＋（プラス）</h1>
+    <button id="btn-back" class="back-btn hidden">ロビーへ戻る</button>
+  </header>
+
+  <main>
+
+    <!-- ===== タイトル画面 ===== -->
+    <section id="screen-title">
+      <div class="title-screen">
+
+        <div class="title-logo">将棋＋</div>
+
+        <div class="title-divider">
+          <span>プラス</span>
+        </div>
+
+        <div class="title-form">
+          <p class="name-label">名前を入力してください</p>
+          <input id="name-input" type="text" class="name-input"
+                 placeholder="あなたの名前" maxlength="20" autocomplete="off">
+          <button id="btn-start"        class="title-btn primary-btn">開始</button>
+          <button id="btn-settings-open" class="title-btn secondary-btn">設定</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== ロビー画面 ===== -->
+    <section id="screen-lobby" class="hidden">
+      <div class="lobby">
+        <h2 class="lobby-title">対戦モードを選択</h2>
+        <div class="mode-grid">
+          <button class="mode-card" id="btn-normal">
+            <div class="mode-icon">通常</div>
+            <div class="mode-name">ノーマルマッチ</div>
+            <div class="mode-desc">ランダムにマッチングして対戦</div>
+          </button>
+          <button class="mode-card" id="btn-rank">
+            <div class="mode-icon">RP</div>
+            <div class="mode-name">ランクマッチ</div>
+            <div class="mode-desc">RPが近い相手とマッチング</div>
+          </button>
+          <button class="mode-card" id="btn-cpu">
+            <div class="mode-icon">CPU</div>
+            <div class="mode-name">CPUマッチ</div>
+            <div class="mode-desc">コンピューターと対局</div>
+          </button>
+          <button class="mode-card" id="btn-room">
+            <div class="mode-icon">部屋</div>
+            <div class="mode-name">ルームマッチ</div>
+            <div class="mode-desc">ルームIDで友人と対局</div>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== ノーマルマッチ画面 ===== -->
+    <section id="screen-normal" class="hidden">
+      <div class="mode-screen">
+        <button class="screen-back-btn" id="btn-normal-back">← 戻る</button>
+        <h2 class="mode-screen-title">ノーマルマッチ</h2>
+        <p class="mode-screen-desc">ランダムにマッチングしたプレイヤーと対戦するモードです。</p>
+        <div class="lobby-sub">
+          <p class="waiting-text"><span class="dot-anim">対戦相手を探しています</span></p>
+          <button id="btn-cancel-normal" class="cancel-btn">キャンセル</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== ランクマッチ画面 ===== -->
+    <section id="screen-rank" class="hidden">
+      <div class="mode-screen">
+        <button class="screen-back-btn" id="btn-rank-back">← 戻る</button>
+        <h2 class="mode-screen-title">ランクマッチ</h2>
+        <p class="mode-screen-desc">レートポイント（RP）が近い相手とマッチングし、<br>勝敗に応じてポイントが増減するモードです。</p>
+        <div class="lobby-sub">
+          <div class="rp-display">あなたのRP：<span id="my-rp-display">1000</span></div>
+          <p class="waiting-text"><span class="dot-anim">対戦相手を探しています</span></p>
+          <button id="btn-cancel-rank" class="cancel-btn">キャンセル</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== ルームマッチ画面 ===== -->
+    <section id="screen-room" class="hidden">
+      <div class="mode-screen">
+        <button class="screen-back-btn" id="btn-room-back">← 戻る</button>
+        <h2 class="mode-screen-title">ルームマッチ</h2>
+        <p class="mode-screen-desc">対戦用の部屋を作成または参加し、友人と対戦できるモードです。</p>
+        <div id="room-actions" class="lobby-sub">
+          <div class="online-actions">
+            <button id="btn-create-room" class="sub-btn">部屋を作る</button>
+            <div class="or-divider">または</div>
+            <div class="join-row">
+              <input id="room-id-input" type="text"
+                     placeholder="ルームID（例: AB12CD）"
+                     maxlength="6" autocomplete="off">
+              <button id="btn-join-room" class="sub-btn">参加する</button>
+            </div>
+          </div>
+        </div>
+        <div id="waiting-panel" class="lobby-sub hidden">
+          <p class="waiting-label">あなたのルームID</p>
+          <div class="room-id-badge" id="room-id-display"></div>
+          <p class="waiting-text"><span class="dot-anim">相手の参加を待っています</span></p>
+          <button id="btn-cancel-wait" class="cancel-btn">キャンセル</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== ゲーム画面 ===== -->
+    <section id="screen-game" class="hidden">
+
+      <div class="game-status-bar">
+        <span id="game-mode-label" class="status-tag"></span>
+        <span id="room-id-label"   class="status-tag hidden"></span>
+        <span id="cpu-thinking"    class="status-tag thinking hidden">CPU 思考中...</span>
+      </div>
+
+      <div class="game-layout">
+
+        <!-- 左：盤面エリア -->
+        <div class="game-left">
+          <div class="game-container">
+
+            <!-- 後手エリア -->
+            <div class="player-area" id="gote-area">
+              <div class="player-info">
+                <span class="turn-indicator">▶</span>
+                <span class="player-name" id="gote-name">後手</span>
+              </div>
+              <div class="captured-pieces">
+                <span class="captured-label">持ち駒：</span>
+                <div class="captured-list" id="gote-captured-list"></div>
+              </div>
+            </div>
+
+            <!-- 将棋盤 -->
+            <div class="board-wrapper">
+              <div class="col-labels">
+                <span>９</span><span>８</span><span>７</span><span>６</span>
+                <span>５</span><span>４</span><span>３</span><span>２</span><span>１</span>
+              </div>
+              <div class="board-area">
+                <div id="shogi-board" class="shogi-board"></div>
+                <div class="row-labels">
+                  <span>一</span><span>二</span><span>三</span><span>四</span>
+                  <span>五</span><span>六</span><span>七</span><span>八</span><span>九</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 先手エリア -->
+            <div class="player-area" id="sente-area">
+              <div class="player-info">
+                <span class="turn-indicator">▶</span>
+                <span class="player-name" id="sente-name">先手</span>
+              </div>
+              <div class="captured-pieces">
+                <span class="captured-label">持ち駒：</span>
+                <div class="captured-list" id="sente-captured-list"></div>
+              </div>
+            </div>
+
+          </div><!-- /.game-container -->
+
+          <!-- 手札バー（マリガン・配置フェーズ） -->
+          <div id="hand-bar" class="hand-bar hidden">
+            <div class="hand-bar-header" id="hand-bar-title">手　札</div>
+            <div id="hand-cards" class="hand-cards"></div>
+            <div class="hand-bar-actions">
+              <button id="btn-phase-confirm" class="sub-btn">確定</button>
+            </div>
+          </div>
+
+        </div><!-- /.game-left -->
+
+        <!-- 右：棋譜パネル -->
+        <div class="kifu-panel">
+          <div class="kifu-header">棋　譜</div>
+          <div class="kifu-list" id="kifu-list"></div>
+        </div>
+
+      </div><!-- /.game-layout -->
+    </section>
+
+    <!-- ===== 設定画面 ===== -->
+    <section id="screen-settings" class="hidden">
+      <div class="settings-screen">
+        <h2 class="settings-title">設定</h2>
+        <p class="settings-wip">準備中</p>
+        <button id="btn-settings-back" class="sub-btn">戻る</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== 成りモーダル ===== -->
+  <div id="promotion-modal" class="modal-overlay">
+    <div class="modal">
+      <p class="modal-title">成りますか？</p>
+      <div class="modal-pieces">
+        <div class="modal-piece-option">
+          <div class="piece modal-piece promoted" id="modal-promoted-piece"></div>
+          <button id="btn-promote" class="modal-btn promote-btn">成る</button>
+        </div>
+        <div class="modal-piece-option">
+          <div class="piece modal-piece" id="modal-original-piece"></div>
+          <button id="btn-no-promote" class="modal-btn">成らない</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ゲーム終了モーダル ===== -->
+  <div id="gameover-modal" class="modal-overlay">
+    <div class="modal gameover-modal">
+      <div class="gameover-winner" id="gameover-winner"></div>
+      <div class="gameover-label"  id="gameover-label"></div>
+      <div class="gameover-rp hidden" id="gameover-rp"></div>
+      <div class="gameover-buttons">
+        <button id="btn-gameover-restart" class="modal-btn promote-btn">最初から</button>
+        <button id="btn-gameover-close"   class="modal-btn">棋譜を確認</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== マリガンオーバーレイ ===== -->
+  <div id="mulligan-overlay" class="modal-overlay">
+    <div class="modal mulligan-modal">
+      <p class="modal-title">マリガン</p>
+      <p class="mulligan-subtitle">引き直したいカードを選んで「確定」してください<br>（選択なしで確定するとすべて手札に残ります）</p>
+      <div class="mulligan-cards" id="mulligan-cards"></div>
+      <div id="mulligan-waiting" class="mulligan-waiting hidden">相手のマリガンを待っています...</div>
+      <button id="btn-mulligan-confirm" class="modal-btn promote-btn">確　定</button>
+    </div>
+  </div>
+
+  <!-- ===== ゲーム内通知 ===== -->
+  <div id="game-notice">
+    <div class="game-notice-box"></div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="{{ url_for('static', filename='js/game.js') }}?v=15"></script>
+</body>
+</html>
