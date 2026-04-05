@@ -234,6 +234,9 @@ section {
 .gameover-rematch-status.opponent-wants {
   color: #6de87a;
 }
+.gameover-rematch-status.opponent-left {
+  color: #e87a7a;
+}
 
 /* 相手手札シルエット */
 .piece-silhouette {

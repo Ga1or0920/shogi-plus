@@ -135,6 +135,9 @@ function onJoinRoom() {
 }
 function onCancelWait() { resetRoomScreen(); gameMode = null; mySide = null; }
 function onBack() {
+  if (gameMode === "online" && gameState?.gameOver) {
+    socket.emit("leave_game");
+  }
   clearBoardMode(); gameMode = null; mySide = null; roomId = null;
   matchMode = null; opponentName = null;
   clearTimeout(mulliganDelayTimer); mulliganDelayed = false;
@@ -262,6 +265,19 @@ function initSocketEvents() {
 
   socket.on("opponent_disconnected", () => {
     alert("相手が切断しました。ロビーに戻ります。"); onBack();
+  });
+
+  socket.on("opponent_left_game", () => {
+    const statusEl = document.getElementById("gameover-rematch-status");
+    if (statusEl) {
+      statusEl.textContent = "相手がロビーへ戻りました";
+      statusEl.className   = "gameover-rematch-status opponent-left";
+    }
+    const rematchBtn = document.getElementById("btn-gameover-rematch");
+    if (rematchBtn && !rematchBtn.classList.contains("hidden")) {
+      rematchBtn.disabled    = true;
+      rematchBtn.textContent = "再戦できません";
+    }
   });
 
   socket.on("rematch_status", (d) => {

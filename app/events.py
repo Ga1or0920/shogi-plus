@@ -475,6 +475,19 @@ def on_request_drop_targets(data):
     emit("drop_targets_result", {"targets": [{"row": r, "col": c} for r, c in targets]})
 
 
+@socketio.on("leave_game")
+def on_leave_game():
+    """ゲーム終了後にプレイヤーがロビーへ戻った際の通知"""
+    sid = request.sid
+    room = _rooms.get_by_sid(sid)
+    if not room:
+        return
+    opp = room.opponent_sid(sid)
+    _rooms.remove(sid)
+    if opp:
+        socketio.emit("opponent_left_game", {}, to=opp)
+
+
 @socketio.on("reset_game")
 def on_reset_game():
     room = _rooms.get_by_sid(request.sid)
