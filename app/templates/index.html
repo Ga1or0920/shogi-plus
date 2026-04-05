@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>将棋＋（プラス）</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=17">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=18">
 </head>
 <body>
   <header class="hidden">
@@ -229,7 +229,11 @@
       <div class="gameover-label"  id="gameover-label"></div>
       <div class="gameover-rp hidden" id="gameover-rp"></div>
       <div class="gameover-buttons">
+        <!-- ローカル / CPU 用 -->
         <button id="btn-gameover-restart" class="modal-btn promote-btn">最初から</button>
+        <!-- オンライン（ノーマル / ランク）用 -->
+        <button id="btn-gameover-rematch" class="modal-btn promote-btn hidden">再戦を申し込む</button>
+        <div id="gameover-rematch-status" class="gameover-rematch-status hidden"></div>
         <button id="btn-gameover-close"   class="modal-btn">棋譜を確認</button>
       </div>
     </div>
@@ -252,6 +256,6 @@
   </div>
 
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-  <script src="{{ url_for('static', filename='js/game.js') }}?v=17"></script>
+  <script src="{{ url_for('static', filename='js/game.js') }}?v=18"></script>
 </body>
 </html>

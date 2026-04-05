@@ -14,9 +14,10 @@ class Room:
         self.game         = ShogiGame()
         self.mode         = mode          # "pvp" | "cpu" | "rank"
         self.players      = {"sente": creator_sid, "gote": None}
-        self.rp           = {"sente": 1000, "gote": 1000}   # ランクマッチ用 RP
-        self.names        = {"sente": "", "gote": ""}        # ランクマッチ用 名前
-        self.rank_settled = False                            # RP 精算済みフラグ
+        self.rp             = {"sente": 1000, "gote": 1000}   # ランクマッチ用 RP
+        self.names          = {"sente": "", "gote": ""}      # ランクマッチ用 名前
+        self.rank_settled   = False                          # RP 精算済みフラグ
+        self.rematch_votes  = {"sente": False, "gote": False}  # 再戦投票
 
     def is_full(self) -> bool:
         return self.players["gote"] is not None

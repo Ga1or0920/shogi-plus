@@ -223,6 +223,18 @@ section {
 .gameover-rp.rp-gain { color: #6de87a; }
 .gameover-rp.rp-loss { color: #e86d6d; }
 
+/* 再戦ステータス */
+.gameover-rematch-status {
+  font-size: 0.85rem;
+  color: #9aabbf;
+  margin: 0.4rem 0 0;
+  letter-spacing: 0.05em;
+  min-height: 1.2em;
+}
+.gameover-rematch-status.opponent-wants {
+  color: #6de87a;
+}
+
 /* 相手手札シルエット */
 .piece-silhouette {
   width: 28px;
@@ -372,7 +384,7 @@ section {
 .gameover-modal { min-width: 280px; }
 .gameover-winner { font-size: 1.8rem; color: #e8b86d; font-weight: bold; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
 .gameover-label  { font-size: 1rem; color: #9aabbf; margin-bottom: 1.8rem; letter-spacing: 0.1em; }
-.gameover-buttons { display: flex; gap: 1rem; justify-content: center; }
+.gameover-buttons { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
 
 .modal-btn {
   padding: 0.45rem 1.1rem; border-radius: 6px;

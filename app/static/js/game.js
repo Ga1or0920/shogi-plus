@@ -203,6 +203,7 @@ function initSocketEvents() {
   });
 
   socket.on("game_start", (d) => {
+    closeAllModals();
     gameState = d.state; mySide = d.your_side; roomId = d.room_id ?? roomId;
     gameMode  = d.mode === "cpu" ? "cpu" : "online";
     matchMode = d.mode;
@@ -217,7 +218,7 @@ function initSocketEvents() {
                     : d.mode === "normal" ? "ノーマルマッチ"
                     : "オンライン対戦";
     showGameScreen(modeLabel);
-    showNotice(["対戦開始"], 2000);
+    showNotice([d.is_rematch ? "再戦開始" : "対戦開始"], 2000);
     mulliganDelayTimer = setTimeout(() => {
       mulliganDelayed = false;
       renderMulliganOverlay();
@@ -260,6 +261,20 @@ function initSocketEvents() {
 
   socket.on("opponent_disconnected", () => {
     alert("相手が切断しました。ロビーに戻ります。"); onBack();
+  });
+
+  socket.on("rematch_status", (d) => {
+    const oppSide  = mySide === "sente" ? "gote" : "sente";
+    const statusEl = document.getElementById("gameover-rematch-status");
+    if (!statusEl) return;
+    if (d[oppSide]) {
+      statusEl.textContent = "相手が再戦を希望しています";
+      statusEl.classList.add("opponent-wants");
+    } else {
+      statusEl.textContent = "相手はまだ決めていません";
+      statusEl.classList.remove("opponent-wants");
+    }
+    statusEl.classList.remove("hidden");
   });
 
   socket.on("moves_result",        () => {});
@@ -826,6 +841,11 @@ function initGameOverModal() {
   document.getElementById("btn-gameover-restart").addEventListener("click", () => {
     closeAllModals(); onReset();
   });
+  document.getElementById("btn-gameover-rematch").addEventListener("click", () => {
+    document.getElementById("btn-gameover-rematch").disabled = true;
+    document.getElementById("btn-gameover-rematch").textContent = "申し込み済み…";
+    socket.emit("request_rematch");
+  });
   document.getElementById("btn-gameover-close").addEventListener("click", () => {
     closeAllModals();
   });
@@ -845,6 +865,18 @@ function showGameOverModal() {
   document.getElementById("gameover-label").textContent  = "旗に到達！";
   // RP表示はrank_resultイベント受信時に更新する
   document.getElementById("gameover-rp").classList.add("hidden");
+
+  // ノーマル/ランクは再戦ボタン、それ以外は最初からボタン
+  const isOnlineRematch = matchMode === "normal" || matchMode === "rank";
+  document.getElementById("btn-gameover-restart").classList.toggle("hidden", isOnlineRematch);
+  const rematchBtn = document.getElementById("btn-gameover-rematch");
+  rematchBtn.classList.toggle("hidden", !isOnlineRematch);
+  rematchBtn.disabled = false;
+  rematchBtn.textContent = "再戦を申し込む";
+  const statusEl = document.getElementById("gameover-rematch-status");
+  statusEl.classList.add("hidden");
+  statusEl.classList.remove("opponent-wants");
+  statusEl.textContent = "";
 
   document.getElementById("gameover-modal").classList.add("visible");
 }

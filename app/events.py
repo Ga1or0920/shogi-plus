@@ -34,14 +34,16 @@ def _maybe_emit_rank_result(room):
     loser = "gote" if winner == "sente" else "sente"
     delta = _calc_rp_delta(room.rp[winner], room.rp[loser])
     room.rank_settled = True
+    room.rp[winner] += delta
+    room.rp[loser]   = max(0, room.rp[loser] - delta)
     socketio.emit("rank_result",
                   {"delta":  delta,
-                   "new_rp": room.rp[winner] + delta},
+                   "new_rp": room.rp[winner]},
                   to=room.players[winner])
     if room.players[loser] and room.players[loser] != "cpu":
         socketio.emit("rank_result",
                       {"delta":  -delta,
-                       "new_rp": max(0, room.rp[loser] - delta)},
+                       "new_rp": room.rp[loser]},
                       to=room.players[loser])
 
 
@@ -477,6 +479,42 @@ def on_reset_game():
     room.game = ShogiGame()
     state = room.game.to_dict()
     socketio.emit("board_update", {"state": state}, to=room.room_id)
+
+
+@socketio.on("request_rematch")
+def on_request_rematch():
+    room = _rooms.get_by_sid(request.sid)
+    if not room or not room.game.game_over:
+        return
+    if room.mode not in ("normal", "rank"):
+        return
+    my_side = room.get_side(request.sid)
+    if not my_side:
+        return
+
+    room.rematch_votes[my_side] = True
+
+    # 両者へ現在の投票状態を通知
+    votes = {"sente": room.rematch_votes["sente"], "gote": room.rematch_votes["gote"]}
+    socketio.emit("rematch_status", votes, to=room.room_id)
+
+    # 双方が希望した場合は再戦開始
+    if all(room.rematch_votes.values()):
+        room.game         = ShogiGame()
+        room.rank_settled = False
+        room.rematch_votes = {"sente": False, "gote": False}
+        for side, sid in room.players.items():
+            if sid and sid != "cpu":
+                opp_side = "gote" if side == "sente" else "sente"
+                socketio.emit("game_start", {
+                    "state":         room.game.to_dict(viewer=side),
+                    "your_side":     side,
+                    "room_id":       room.room_id,
+                    "mode":          room.mode,
+                    "opponent_name": room.names[opp_side],
+                    "opponent_rp":   room.rp[opp_side],
+                    "is_rematch":    True,
+                }, to=sid)
 
 
 # ─────── CPU の手番 ───────
