@@ -850,6 +850,9 @@ function initGameOverModal() {
   document.getElementById("btn-gameover-close").addEventListener("click", () => {
     closeAllModals();
   });
+  document.getElementById("btn-gameover-lobby").addEventListener("click", () => {
+    closeAllModals(); onBack();
+  });
 }
 
 function showGameOverModal() {
