@@ -259,6 +259,17 @@ section {
 .cell:hover    { background-color: #e8c87a; }
 .cell.selected { background-color: #88cc88; }
 .cell.movable  { background-color: #b0d8b0; cursor: pointer; }
+
+/* 最終手ルートハイライト */
+.cell.last-move-from { background-color: rgba(255, 190, 50, 0.30); }
+.cell.last-move-to   { background-color: rgba(255, 190, 50, 0.48); }
+.cell.last-move-path { background-color: rgba(255, 190, 50, 0.14); }
+/* 他のハイライトと重なったときは優先度を下げる */
+.cell.selected.last-move-from,
+.cell.selected.last-move-to   { background-color: #88cc88; }
+.cell.movable.last-move-from,
+.cell.movable.last-move-to,
+.cell.movable.last-move-path   { background-color: #b0d8b0; }
 .cell.check    {
   background-color: #f0a0a0;
   animation: checkCellPulse 0.8s ease-in-out infinite;

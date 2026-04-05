@@ -48,6 +48,7 @@ class ShogiGame:
         self.turn_start_time  = 0.0
         self.turn_number      = 0   # ターンごとにインクリメント（タイマー識別用）
         self.player_turn_count = {"sente": 0, "gote": 0}  # 各プレイヤーのターン回数
+        self.last_move        = None  # {"from":[r,c],"to":[r,c]} | None
 
     # ═══════════════════════════════════
     #  初期盤面
@@ -355,6 +356,7 @@ class ShogiGame:
 
         self.board[to_row][to_col] = moved
         self.board[from_row][from_col] = None
+        self.last_move = {"from": [from_row, from_col], "to": [to_row, to_col]}
         self.turn_movements += 1
         self._check_win(to_row, to_col, self.current_player)
         return self.to_dict()
@@ -446,4 +448,5 @@ class ShogiGame:
             "gameOver":          self.game_over,
             "winner":            self.winner,
             "kifu":              self.kifu.to_list(),
+            "lastMove":          self.last_move,
         }

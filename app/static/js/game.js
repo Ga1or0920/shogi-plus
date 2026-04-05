@@ -433,6 +433,26 @@ function updateCpuThinking() {
 
 
 function applyHighlights() {
+  // 最終手ルートのハイライト
+  const lm = gameState?.lastMove;
+  if (lm) {
+    const [fr, fc] = lm.from;
+    const [tr, tc] = lm.to;
+    getCellEl(fr, fc)?.classList.add("last-move-from");
+    getCellEl(tr, tc)?.classList.add("last-move-to");
+    // from→to の経路上のマス（直線 or 斜め移動のみ）
+    const dr = Math.sign(tr - fr);
+    const dc = Math.sign(tc - fc);
+    const isLine = (fr === tr) || (fc === tc) || (Math.abs(tr - fr) === Math.abs(tc - fc));
+    if (isLine && (dr !== 0 || dc !== 0)) {
+      let r = fr + dr, c = fc + dc;
+      while (r !== tr || c !== tc) {
+        getCellEl(r, c)?.classList.add("last-move-path");
+        r += dr; c += dc;
+      }
+    }
+  }
+
   for (const { row, col } of validTargets) {
     getCellEl(row, col)?.classList.add("movable");
   }
