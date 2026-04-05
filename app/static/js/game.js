@@ -65,6 +65,10 @@ function initTitle() {
   const btnSettingsOpen = document.getElementById("btn-settings-open");
   const btnSettingsBack = document.getElementById("btn-settings-back");
 
+  // 保存済み名前を自動読み込み
+  const savedName = localStorage.getItem("shogi_name");
+  if (savedName) input.value = savedName;
+
   const doStart = () => {
     const name = input.value.trim();
     if (!name) {
@@ -75,6 +79,7 @@ function initTitle() {
       return;
     }
     playerName = name;
+    localStorage.setItem("shogi_name", name);
     showScreen("lobby");
   };
 
