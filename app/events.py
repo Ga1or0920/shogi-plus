@@ -123,7 +123,7 @@ def on_join_normal_queue():
             sid_sente, sid_gote = sid_a, sid_b
         else:
             sid_sente, sid_gote = sid_b, sid_a
-        room = _rooms.create(sid_sente, mode="pvp")
+        room = _rooms.create(sid_sente, mode="normal")
         _rooms.join(room.room_id, sid_gote)
         # 両者をSocket.IOルームに参加させる
         socketio.server.enter_room(sid_sente, room.room_id, namespace="/")
