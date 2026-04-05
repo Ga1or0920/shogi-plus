@@ -503,6 +503,10 @@ def on_request_rematch():
         room.game         = ShogiGame()
         room.rank_settled = False
         room.rematch_votes = {"sente": False, "gote": False}
+        # 先手・後手を入れ替える
+        room.players["sente"], room.players["gote"] = room.players["gote"], room.players["sente"]
+        room.names["sente"],   room.names["gote"]   = room.names["gote"],   room.names["sente"]
+        room.rp["sente"],      room.rp["gote"]      = room.rp["gote"],      room.rp["sente"]
         for side, sid in room.players.items():
             if sid and sid != "cpu":
                 opp_side = "gote" if side == "sente" else "sente"
