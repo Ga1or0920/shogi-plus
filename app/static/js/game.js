@@ -218,11 +218,12 @@ function initSocketEvents() {
                     : d.mode === "normal" ? "ノーマルマッチ"
                     : "オンライン対戦";
     showGameScreen(modeLabel);
-    showNotice([d.is_rematch ? "再戦開始" : "対戦開始"], 2000);
+    const sideLabel = mySide === "sente" ? "あなたは先攻です" : "あなたは後攻です";
+    showNotice([d.is_rematch ? "再戦開始" : "対戦開始", sideLabel], 2500);
     mulliganDelayTimer = setTimeout(() => {
       mulliganDelayed = false;
       renderMulliganOverlay();
-    }, 2000);
+    }, 2500);
   });
 
   socket.on("board_update", (d) => {
