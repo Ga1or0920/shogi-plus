@@ -70,20 +70,21 @@ def _maybe_start_turn_timer(room):
     tn = room.game.turn_number
     if room.game.phase == "game" and _active_turn_timers.get(room.room_id) != tn:
         _active_turn_timers[room.room_id] = tn
-        socketio.start_background_task(_turn_timer, room, tn)
+        socketio.start_background_task(_turn_timer, room, tn, room.game)
 
 
-def _turn_timer(room, turn_number):
+def _turn_timer(room, turn_number, game):
     """制限時間到達でターンを強制終了し、次のターンを開始する"""
     socketio.sleep(TURN_TIME)
-    if (room.game.phase == "game"
+    if (room.game is game
+            and room.game.phase == "game"
             and not room.game.game_over
             and room.game.turn_number == turn_number):
         room.game.force_end_turn()
         _emit_update(room)
         _maybe_start_turn_timer(room)
         if room.mode == "cpu" and room.game.current_player == "gote":
-            socketio.start_background_task(_cpu_turn, room)
+            socketio.start_background_task(_cpu_turn, room, room.game)
 
 
 # ─────── 接続 ───────
@@ -254,22 +255,24 @@ def on_mulligan(data):
         _emit_update(room)
         # 配置フェーズへ移行した場合、タイマーを起動
         if room.game.phase == "placement":
-            socketio.start_background_task(_placement_timer, room)
+            socketio.start_background_task(_placement_timer, room, room.game)
         # CPU対戦：後手（CPU）は即座にマリガンをスキップ
         elif room.mode == "cpu" and not room.game.mulligan_done["gote"]:
-            socketio.start_background_task(_cpu_mulligan, room)
+            socketio.start_background_task(_cpu_mulligan, room, room.game)
     except ValueError as e:
         emit("error", {"message": str(e)})
 
 
-def _cpu_mulligan(room):
+def _cpu_mulligan(room, game):
     """CPU は引き直しなしでマリガンを確定する"""
     socketio.sleep(0.3)
+    if room.game is not game:
+        return
     try:
         room.game.mulligan("gote", [])
         _emit_update(room)
         if room.game.phase == "placement":
-            socketio.start_background_task(_placement_timer, room)
+            socketio.start_background_task(_placement_timer, room, room.game)
     except ValueError:
         pass
 
@@ -292,7 +295,7 @@ def on_place_piece(data):
                 and room.game.phase == "placement"
                 and room.game.placement_done[side]
                 and not room.game.placement_done["gote"]):
-            socketio.start_background_task(_cpu_placement, room)
+            socketio.start_background_task(_cpu_placement, room, room.game)
     except (ValueError, KeyError) as e:
         emit("error", {"message": str(e)})
 
@@ -325,29 +328,30 @@ def on_end_placement():
             # 両者確定してゲーム開始
             _maybe_start_turn_timer(room)
             if room.mode == "cpu" and room.game.current_player == "gote":
-                socketio.start_background_task(_cpu_turn, room)
+                socketio.start_background_task(_cpu_turn, room, room.game)
         elif room.mode == "cpu" and not room.game.placement_done["gote"]:
             # CPU の配置を終了させる
-            socketio.start_background_task(_cpu_placement, room)
+            socketio.start_background_task(_cpu_placement, room, room.game)
     except ValueError as e:
         emit("error", {"message": str(e)})
 
 
-def _placement_timer(room):
+def _placement_timer(room, game):
     """制限時間到達で配置フェーズを強制終了し、ターンタイマーを起動する"""
     socketio.sleep(PLACEMENT_TIME)
-    if room.game.phase == "placement":
+    if room.game is game and room.game.phase == "placement":
         room.game.force_end_placement()
         _emit_update(room)
         _maybe_start_turn_timer(room)
         if room.mode == "cpu" and room.game.current_player == "gote":
-            socketio.start_background_task(_cpu_turn, room)
+            socketio.start_background_task(_cpu_turn, room, room.game)
 
 
-def _cpu_placement(room):
+def _cpu_placement(room, game):
     """CPU が手札を自陣にランダム配置してターン終了する"""
     socketio.sleep(0.5)
-    game = room.game
+    if room.game is not game:
+        return
     # ① 配置ループ（例外は無視して続行）
     try:
         flag = FLAG_POS["gote"]
@@ -376,7 +380,7 @@ def _cpu_placement(room):
     if game.phase == "game":
         _maybe_start_turn_timer(room)
         if game.current_player == "gote":
-            socketio.start_background_task(_cpu_turn, room)
+            socketio.start_background_task(_cpu_turn, room, game)
 
 
 # ─────── ゲーム操作（カード配置・移動・ターン終了） ───────
@@ -407,7 +411,7 @@ def on_end_turn():
         _emit_update(room)
         _maybe_start_turn_timer(room)
         if room.mode == "cpu" and room.game.current_player == "gote":
-            socketio.start_background_task(_cpu_turn, room)
+            socketio.start_background_task(_cpu_turn, room, room.game)
     except ValueError as e:
         emit("error", {"message": str(e)})
 
@@ -476,9 +480,16 @@ def on_reset_game():
     room = _rooms.get_by_sid(request.sid)
     if not room:
         return
+    _active_turn_timers.pop(room.room_id, None)
     room.game = ShogiGame()
-    state = room.game.to_dict()
-    socketio.emit("board_update", {"state": state}, to=room.room_id)
+    for side, sid in room.players.items():
+        if sid and sid != "cpu":
+            socketio.emit("game_start", {
+                "state":     room.game.to_dict(viewer=side),
+                "your_side": side,
+                "room_id":   room.room_id,
+                "mode":      room.mode,
+            }, to=sid)
 
 
 @socketio.on("request_rematch")
@@ -500,6 +511,7 @@ def on_request_rematch():
 
     # 双方が希望した場合は再戦開始
     if all(room.rematch_votes.values()):
+        _active_turn_timers.pop(room.room_id, None)
         room.game         = ShogiGame()
         room.rank_settled = False
         room.rematch_votes = {"sente": False, "gote": False}
@@ -524,10 +536,10 @@ def on_request_rematch():
 
 # ─────── CPU の手番 ───────
 
-def _cpu_turn(room):
+def _cpu_turn(room, game):
     """CPU のターン：移動→ターン終了"""
     socketio.sleep(0.6)   # 思考演出（ノンブロッキング）
-    if room.game.phase != "game" or room.game.game_over:
+    if room.game is not game or room.game.phase != "game" or room.game.game_over:
         return
 
     move = get_cpu_move(room.game)
